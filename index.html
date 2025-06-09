@@ -330,14 +330,20 @@
                             // 원본 이미지 그리기
                             ctx.drawImage(img, 0, 0);
                             
-                            // 워터마크 크기 계산
+                            // 워터마크 크기 계산 - 더 크게 조정
                             const imageSize = Math.max(img.width, img.height);
                             let logoScale;
                             
-                            if (imageSize <= 800) logoScale = 0.25;
-                            else if (imageSize <= 2000) logoScale = 0.20;
-                            else if (imageSize <= 4000) logoScale = 0.15;
-                            else logoScale = 0.12;
+                            // 크기별 스케일 조정 (더 크게)
+                            if (imageSize <= 500) logoScale = 0.35;        // 500px 이하: 35%
+                            else if (imageSize <= 800) logoScale = 0.30;   // 800px 이하: 30%
+                            else if (imageSize <= 1200) logoScale = 0.25;  // 1200px 이하: 25% (1000px 기준)
+                            else if (imageSize <= 2000) logoScale = 0.22;  // 2000px 이하: 22%
+                            else if (imageSize <= 3000) logoScale = 0.20;  // 3000px 이하: 20%
+                            else if (imageSize <= 4000) logoScale = 0.18;  // 4000px 이하: 18%
+                            else logoScale = 0.16;                         // 4000px 이상: 16%
+                            
+                            console.log(`이미지 크기: ${imageSize}px, 워터마크 스케일: ${(logoScale*100).toFixed(1)}%`);
                             
                             const logoSize = imageSize * logoScale;
                             const logoRatio = logoImage.width / logoImage.height;
@@ -355,8 +361,8 @@
                             const x = (img.width - logoWidth) / 2;
                             const y = (img.height - logoHeight) / 2;
                             
-                            // 워터마크 그리기
-                            ctx.globalAlpha = 0.35;
+                            // 워터마크 그리기 (투명도 40%로 조정)
+                            ctx.globalAlpha = 0.40;
                             ctx.drawImage(logoImage, x, y, logoWidth, logoHeight);
                             ctx.globalAlpha = 1;
                             
@@ -408,7 +414,7 @@
             link.click();
         }
 
-        // 이벤트 리스너
+        // 이벤트 리스너 - 드래그&드롭 문제 해결
         document.addEventListener('DOMContentLoaded', function() {
             console.log('페이지 로드 완료');
             createLogo();
@@ -416,29 +422,72 @@
             const fileInput = document.getElementById('fileInput');
             const uploadArea = document.getElementById('uploadArea');
             
+            // 파일 선택 이벤트
             fileInput.addEventListener('change', function(e) {
-                console.log('파일 선택됨');
-                handleFiles(e.target.files);
+                console.log('파일 선택됨:', e.target.files.length, '개');
+                if (e.target.files.length > 0) {
+                    handleFiles(e.target.files);
+                }
             });
             
-            uploadArea.addEventListener('click', function() {
-                selectFiles();
+            // 클릭 이벤트
+            uploadArea.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('업로드 영역 클릭됨');
+                fileInput.click();
             });
             
+            // 드래그 오버 이벤트 (중요!)
             uploadArea.addEventListener('dragover', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 uploadArea.classList.add('dragover');
+                console.log('드래그 오버');
             });
             
-            uploadArea.addEventListener('dragleave', function() {
-                uploadArea.classList.remove('dragover');
+            // 드래그 엔터 이벤트 추가
+            uploadArea.addEventListener('dragenter', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadArea.classList.add('dragover');
+                console.log('드래그 엔터');
             });
             
+            // 드래그 리브 이벤트
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // 실제로 영역을 벗어날 때만 제거
+                if (!uploadArea.contains(e.relatedTarget)) {
+                    uploadArea.classList.remove('dragover');
+                    console.log('드래그 리브');
+                }
+            });
+            
+            // 드롭 이벤트 (가장 중요!)
             uploadArea.addEventListener('drop', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 uploadArea.classList.remove('dragover');
-                console.log('파일 드롭됨');
-                handleFiles(e.dataTransfer.files);
+                
+                console.log('파일 드롭됨:', e.dataTransfer.files.length, '개');
+                
+                if (e.dataTransfer.files.length > 0) {
+                    handleFiles(e.dataTransfer.files);
+                } else {
+                    console.log('드롭된 파일이 없음');
+                }
+            });
+            
+            // 전체 페이지에서 드래그&드롭 방지 (다른 곳에 드롭 방지)
+            document.addEventListener('dragover', function(e) {
+                e.preventDefault();
+            });
+            
+            document.addEventListener('drop', function(e) {
+                if (e.target !== uploadArea && !uploadArea.contains(e.target)) {
+                    e.preventDefault();
+                }
             });
         });
     </script>
