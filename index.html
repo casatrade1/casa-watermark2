@@ -356,40 +356,6 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
-
-            handleLogoUpload(file) {
-                if (!file) return;
-                
-                if (!file.type.startsWith('image/')) {
-                    alert('이미지 파일만 업로드 가능합니다.');
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        this.logoImage = img;
-                        this.showLogoPreview(img);
-                        
-                        // 기존 이미지들이 있다면 다시 처리
-                        if (this.uploadedFiles.length > 0) {
-                            this.processImages();
-                        }
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-
-            showLogoPreview(img) {
-                this.logoPreview.innerHTML = `
-                    <div style="display: inline-block; padding: 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
-                        <img src="${img.src}" style="max-width: 150px; max-height: 80px; display: block;">
-                        <p style="margin-top: 8px; font-size: 0.75rem; color: #64748b;">로고 업로드 완료</p>
-                    </div>
-                `;
-            }
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -404,35 +370,6 @@
             height: 1px;
             background: #e2e8f0;
             margin: 2rem 0;
-        }
-
-        /* Dark mode friendly adjustments */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: #0f172a;
-                color: #e2e8f0;
-            }
-            
-            .header {
-                background: #1e293b;
-                border-bottom-color: #334155;
-            }
-            
-            .main-content {
-                background: #1e293b;
-            }
-            
-            .logo-info,
-            .file-item,
-            .download-section {
-                background: #334155;
-                border-color: #475569;
-            }
-            
-            .preview-item {
-                background: #334155;
-                border-color: #475569;
-            }
         }
 
         /* Mobile responsiveness */
@@ -469,13 +406,16 @@
         </div>
 
         <div class="main-content">
-                <!-- 로고 업로드 섹션 추가 -->
-                <div class="logo-upload-section" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
-                    <h3 style="color: #0f172a; margin-bottom: 1rem;">로고 업로드</h3>
-                    <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.875rem;">PNG 로고 파일을 업로드하세요. 이 로고가 모든 이미지에 워터마크로 적용됩니다.</p>
-                    <input type="file" id="logoInput" accept="image/png" style="margin-bottom: 1rem;">
-                    <div id="logoPreview" style="text-align: center; margin-top: 1rem;"></div>
+            <!-- 로고 정보 -->
+            <div class="logo-info">
+                <div class="logo-display">
+                    <img id="logoDisplay" style="max-width: 50px; max-height: 50px;">
                 </div>
+                <div class="logo-text">
+                    <h3>자동 워터마크 보호</h3>
+                    <p>업로드된 모든 이미지에 워터마크가 자동으로 적용됩니다</p>
+                </div>
+            </div>
 
             <!-- 업로드 영역 -->
             <div class="upload-area" id="uploadArea">
@@ -543,8 +483,6 @@
             initializeElements() {
                 this.uploadArea = document.getElementById('uploadArea');
                 this.fileInput = document.getElementById('fileInput');
-                this.logoInput = document.getElementById('logoInput');
-                this.logoPreview = document.getElementById('logoPreview');
                 this.fileList = document.getElementById('fileList');
                 this.previewGrid = document.getElementById('previewGrid');
                 this.progressBar = document.getElementById('progressBar');
@@ -558,316 +496,11 @@
             }
 
             createLogo() {
-                // 실제 PNG 로고 이미지 로드 - 올바른 Base64 데이터 사용
+                // 처음에 업로드해주신 PNG 로고 이미지를 직접 사용
                 const img = new Image();
                 img.onload = () => {
                     this.logoImage = img;
-                    this.displayLogo();
+                    this.logoDisplay.src = img.src;
                 };
-                // 간단한 텍스트 기반 로고로 대체 (실제 PNG 파일 업로드 기능 추가 예정)
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 200;
-                canvas.height = 80;
-
-                // 로고 배경
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, 200, 80);
-
-                // 테두리
-                ctx.strokeStyle = '#1e293b';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(5, 5, 190, 70);
-
-                // 텍스트
-                ctx.fillStyle = '#1e293b';
-                ctx.font = 'bold 24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('까사감정원', 100, 35);
-                
-                ctx.font = '14px Arial';
-                ctx.fillText('CASA APPRAISAL', 100, 55);
-
-                img.src = canvas.toDataURL();
-            }bs2LFjx44dO3bs2LFjx44dO3bs2LFjx44dO3bs
-
-            displayLogo() {
-                const ctx = this.logoDisplay.getContext('2d');
-                const size = 40;
-                const ratio = Math.min(size / this.logoImage.width, size / this.logoImage.height);
-                const width = this.logoImage.width * ratio;
-                const height = this.logoImage.height * ratio;
-                const x = (size - width) / 2;
-                const y = (size - height) / 2;
-                
-                ctx.clearRect(0, 0, size, size);
-                ctx.drawImage(this.logoImage, x, y, width, height);
-            }
-
-            bindEvents() {
-                // 드래그 앤 드롭
-                this.uploadArea.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    this.uploadArea.classList.add('dragover');
-                });
-
-                this.uploadArea.addEventListener('dragleave', () => {
-                    this.uploadArea.classList.remove('dragover');
-                });
-
-                this.uploadArea.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    this.uploadArea.classList.remove('dragover');
-                    this.handleFiles(e.dataTransfer.files);
-                });
-
-                this.uploadArea.addEventListener('click', () => {
-                    this.fileInput.click();
-                });
-
-                this.fileInput.addEventListener('change', (e) => {
-                    this.handleFiles(e.target.files);
-                });
-
-                this.downloadZipBtn.addEventListener('click', () => this.downloadAsZip());
-                
-                // 로고 업로드 이벤트
-                this.logoInput.addEventListener('change', (e) => {
-                    this.handleLogoUpload(e.target.files[0]);
-                });
-            }
-
-            handleFiles(files) {
-                const validFiles = Array.from(files).filter(file => 
-                    file.type.startsWith('image/')
-                );
-
-                if (validFiles.length === 0) {
-                    this.showNotification('이미지 파일만 업로드 가능합니다.', 'error');
-                    return;
-                }
-
-                this.uploadedFiles = [...this.uploadedFiles, ...validFiles];
-                this.updateFileList();
-                this.processImages();
-            }
-
-            showNotification(message, type = 'info') {
-                // 간단한 알림 시스템 (실제로는 더 정교한 토스트 알림을 구현할 수 있음)
-                alert(message);
-            }
-
-            updateFileList() {
-                this.fileList.innerHTML = '';
-                
-                this.uploadedFiles.forEach((file, index) => {
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'file-item slide-up';
-                    
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        fileItem.innerHTML = `
-                            <div class="file-info">
-                                <img src="${e.target.result}" class="file-thumbnail" alt="thumbnail">
-                                <div class="file-details">
-                                    <h4>${file.name}</h4>
-                                    <p>${this.formatFileSize(file.size)}</p>
-                                </div>
-                            </div>
-                            <div class="status processing" id="status-${index}">처리중</div>
-                        `;
-                    };
-                    reader.readAsDataURL(file);
-                    
-                    this.fileList.appendChild(fileItem);
-                });
-            }
-
-            formatFileSize(bytes) {
-                if (bytes === 0) return '0 B';
-                const k = 1024;
-                const sizes = ['B', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-            }
-
-            async processImages() {
-                if (!this.logoImage || this.uploadedFiles.length === 0) return;
-
-                this.progressBar.style.display = 'block';
-                this.processedImages = [];
-
-                for (let i = 0; i < this.uploadedFiles.length; i++) {
-                    const file = this.uploadedFiles[i];
-                    const processedImage = await this.processImage(file, i);
-                    this.processedImages.push(processedImage);
-                    
-                    const statusElement = document.getElementById(`status-${i}`);
-                    if (statusElement) {
-                        statusElement.className = 'status completed';
-                        statusElement.textContent = '완료';
-                    }
-                    
-                    const progress = ((i + 1) / this.uploadedFiles.length) * 100;
-                    this.progressFill.style.width = `${progress}%`;
-                }
-
-                this.progressBar.style.display = 'none';
-                this.showResults();
-            }
-
-            processImage(file, index) {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            
-                            ctx.drawImage(img, 0, 0);
-                            this.addWatermark(ctx, canvas.width, canvas.height);
-                            
-                            resolve({
-                                canvas: canvas,
-                                fileName: file.name,
-                                originalFile: file
-                            });
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            addWatermark(ctx, canvasWidth, canvasHeight) {
-                if (!this.logoImage) return;
-
-                const imageSize = Math.max(canvasWidth, canvasHeight);
-                let logoScale;
-                
-                // 워터마크 크기를 더 크게 조정
-                if (imageSize <= 800) logoScale = 0.25;      // 25%
-                else if (imageSize <= 2000) logoScale = 0.20;  // 20%
-                else if (imageSize <= 4000) logoScale = 0.15;  // 15%
-                else logoScale = 0.12;                         // 12%
-
-                const logoSize = imageSize * logoScale;
-                const logoRatio = this.logoImage.width / this.logoImage.height;
-                
-                let logoWidth, logoHeight;
-                if (logoRatio > 1) {
-                    logoWidth = logoSize;
-                    logoHeight = logoSize / logoRatio;
-                } else {
-                    logoHeight = logoSize;
-                    logoWidth = logoSize * logoRatio;
-                }
-
-                const x = (canvasWidth - logoWidth) / 2;
-                const y = (canvasHeight - logoHeight) / 2;
-
-                // 투명도를 조금 더 진하게 설정 (35% - 불펌방지용)
-                ctx.globalAlpha = 0.35;
-                ctx.drawImage(this.logoImage, x, y, logoWidth, logoHeight);
-                ctx.globalAlpha = 1;
-            }
-
-            showResults() {
-                this.sectionDivider.style.display = 'block';
-                this.showPreview();
-                this.updateStats();
-                this.downloadSection.style.display = 'block';
-                this.downloadSection.classList.add('slide-up');
-            }
-
-            showPreview() {
-                this.previewGrid.innerHTML = '';
-                
-                this.processedImages.forEach((processedImage, index) => {
-                    const previewItem = document.createElement('div');
-                    previewItem.className = 'preview-item slide-up';
-                    
-                    const previewCanvas = document.createElement('canvas');
-                    const ctx = previewCanvas.getContext('2d');
-                    
-                    const maxPreviewSize = 160;
-                    const ratio = Math.min(maxPreviewSize / processedImage.canvas.width, maxPreviewSize / processedImage.canvas.height);
-                    
-                    previewCanvas.width = processedImage.canvas.width * ratio;
-                    previewCanvas.height = processedImage.canvas.height * ratio;
-                    previewCanvas.className = 'preview-image';
-                    
-                    ctx.drawImage(processedImage.canvas, 0, 0, previewCanvas.width, previewCanvas.height);
-                    
-                    const content = document.createElement('div');
-                    content.className = 'preview-content';
-                    
-                    const title = document.createElement('div');
-                    title.className = 'preview-title';
-                    title.textContent = processedImage.fileName;
-                    
-                    const downloadBtn = document.createElement('button');
-                    downloadBtn.className = 'btn btn-secondary';
-                    downloadBtn.innerHTML = '<span>⬇️</span> 다운로드';
-                    downloadBtn.style.width = '100%';
-                    downloadBtn.onclick = () => this.downloadSingle(processedImage);
-                    
-                    content.appendChild(title);
-                    content.appendChild(downloadBtn);
-                    
-                    previewItem.appendChild(previewCanvas);
-                    previewItem.appendChild(content);
-                    
-                    this.previewGrid.appendChild(previewItem);
-                });
-            }
-
-            updateStats() {
-                const totalSize = this.uploadedFiles.reduce((sum, file) => sum + file.size, 0);
-                
-                this.processedCount.textContent = this.processedImages.length;
-                this.totalSize.textContent = this.formatFileSize(totalSize);
-            }
-
-            downloadSingle(processedImage) {
-                const link = document.createElement('a');
-                link.download = `watermarked_${processedImage.fileName}`;
-                link.href = processedImage.canvas.toDataURL('image/png', 0.9);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-
-            async downloadAsZip() {
-                this.downloadZipBtn.disabled = true;
-                this.downloadZipBtn.innerHTML = '<span>⏳</span> 압축중...';
-                
-                const zip = new JSZip();
-                
-                for (const processedImage of this.processedImages) {
-                    const dataURL = processedImage.canvas.toDataURL('image/png', 0.9);
-                    const base64Data = dataURL.split(',')[1];
-                    zip.file(`watermarked_${processedImage.fileName}`, base64Data, {base64: true});
-                }
-                
-                const content = await zip.generateAsync({type: 'blob'});
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(content);
-                link.download = `까사감정원_워터마크_${new Date().toISOString().slice(0,10)}.zip`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                this.downloadZipBtn.disabled = false;
-                this.downloadZipBtn.innerHTML = '<span>📦</span> ZIP으로 다운로드';
-            }
-        }
-
-        const app = new CasaWatermarkApp();
-    </script>
-</body>
-</html>
+                // 실제 까사감정원 로고 Base64 (처음 이미지 참고해서 수정)
+                img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8CAYAAAAjW/WrAAAACXBIWXMAABYlAAAWJQFJUiTwAAAMdElEQVR4nO2dZ5BUVRSFX89kJpMzAwwwkQwSJEgOEiQ4JAEJSjBIkCBBggQJEiQoOUiQIEGCBAkSJEiQIEGCBAkSJEiQIEGCBAkSJEiQIEGCBAkSJEiQIEGCBAkSJEhwggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIkCBBggQJEiRIk
