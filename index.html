@@ -1,85 +1,828 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>까사감정원 워터마크 자동 삽입기</title>
-  <style>
-    body { font-family: sans-serif; margin: 2em; text-align: center; }
-    canvas { display: none; }
-    img.preview { max-width: 300px; margin-top: 1em; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>까사감정원 워터마크</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 2rem 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .main-content {
+            background: white;
+            padding: 2rem;
+        }
+
+        .logo-info {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-display {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .logo-text {
+            flex: 1;
+        }
+
+        .logo-text h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .logo-text p {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: #fafbfc;
+        }
+
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #2563eb;
+            background: #dbeafe;
+            border-style: solid;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .upload-text {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-subtext {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .file-list {
+            margin: 2rem 0;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: #fafbfc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .file-item:hover {
+            border-color: #cbd5e1;
+            background: #f1f5f9;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .file-thumbnail {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .file-details h4 {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #0f172a;
+            margin-bottom: 0.125rem;
+        }
+
+        .file-details p {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .status.processing {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status.completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .preview-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .preview-item:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .preview-content {
+            padding: 1rem;
+        }
+
+        .preview-title {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .download-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .download-section h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+        }
+
+        .download-section p {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-up {
+            animation: slideUp 0.3s ease;
+        }
+
+        .section-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 2rem 0;
+        }
+
+        /* Dark mode friendly adjustments */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #0f172a;
+                color: #e2e8f0;
+            }
+            
+            .header {
+                background: #1e293b;
+                border-bottom-color: #334155;
+            }
+            
+            .main-content {
+                background: #1e293b;
+            }
+            
+            .logo-info,
+            .file-item,
+            .download-section {
+                background: #334155;
+                border-color: #475569;
+            }
+            
+            .preview-item {
+                background: #334155;
+                border-color: #475569;
+            }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 640px) {
+            .container {
+                margin: 0;
+            }
+            
+            .header,
+            .main-content {
+                padding: 1.5rem 1rem;
+            }
+            
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+            
+            .preview-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+            
+            .stats {
+                gap: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>까사감정원 워터마크 자동 삽입기</h1>
-  <input type="file" id="imageInput" multiple accept="image/*">
-  <div id="output"></div>
+    <div class="container">
+        <div class="header">
+            <h1>까사감정원</h1>
+            <p>전문 감정 워터마크 서비스</p>
+        </div>
 
-  <canvas id="canvas"></canvas>
+        <div class="main-content">
+            <!-- 로고 정보 -->
+            <div class="logo-info">
+                <div class="logo-display">
+                    <canvas id="logoDisplay" width="40" height="40"></canvas>
+                </div>
+                <div class="logo-text">
+                    <h3>자동 워터마크 보호</h3>
+                    <p>업로드된 모든 이미지에 워터마크가 자동으로 적용됩니다</p>
+                </div>
+            </div>
 
-  <script>
-    const watermarkSrc = '/mnt/data/CASLOGO.svg'; // 실제 환경에선 서버 경로 또는 base64로 대체
+            <!-- 업로드 영역 -->
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">파일을 선택하거나 여기로 드래그하세요</div>
+                <div class="upload-subtext">JPG, PNG, GIF 파일을 지원합니다</div>
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    <span>📷</span>
+                    파일 선택
+                </button>
+                <input type="file" id="fileInput" class="file-input" multiple accept="image/*">
+            </div>
 
-    async function loadSVGImage(src) {
-      const response = await fetch(src);
-      const svgText = await response.text();
-      const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(svgBlob);
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.src = url;
-      });
-    }
+            <!-- 진행 상태 -->
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
 
-    async function addWatermarkToImage(imageFile) {
-      const img = new Image();
-      img.src = URL.createObjectURL(imageFile);
-      await img.decode();
+            <!-- 파일 목록 -->
+            <div class="file-list" id="fileList"></div>
 
-      const watermark = await loadSVGImage(watermarkSrc);
+            <!-- 구분선 -->
+            <div class="section-divider" id="sectionDivider" style="display: none;"></div>
 
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = img.width;
-      canvas.height = img.height;
+            <!-- 미리보기 그리드 -->
+            <div class="preview-grid" id="previewGrid"></div>
 
-      ctx.drawImage(img, 0, 0);
+            <!-- 다운로드 섹션 -->
+            <div class="download-section" id="downloadSection">
+                <h3>처리 완료</h3>
+                <p>모든 이미지에 워터마크가 적용되었습니다</p>
+                
+                <div class="stats" id="stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="processedCount">0</div>
+                        <div class="stat-label">처리된 파일</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalSize">0MB</div>
+                        <div class="stat-label">총 용량</div>
+                    </div>
+                </div>
 
-      const scale = img.width * 0.2 / watermark.width;
-      const wmWidth = watermark.width * scale;
-      const wmHeight = watermark.height * scale;
-      const x = (img.width - wmWidth) / 2;
-      const y = (img.height - wmHeight) / 2;
+                <button class="btn btn-success" id="downloadZipBtn">
+                    <span>📦</span>
+                    ZIP으로 다운로드
+                </button>
+            </div>
+        </div>
+    </div>
 
-      ctx.drawImage(watermark, x, y, wmWidth, wmHeight);
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        class CasaWatermarkApp {
+            constructor() {
+                this.logoImage = null;
+                this.uploadedFiles = [];
+                this.processedImages = [];
+                
+                this.initializeElements();
+                this.createLogo();
+                this.bindEvents();
+            }
 
-      const outputUrl = canvas.toDataURL('image/jpeg');
-      return outputUrl;
-    }
+            initializeElements() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.fileList = document.getElementById('fileList');
+                this.previewGrid = document.getElementById('previewGrid');
+                this.progressBar = document.getElementById('progressBar');
+                this.progressFill = document.getElementById('progressFill');
+                this.downloadSection = document.getElementById('downloadSection');
+                this.downloadZipBtn = document.getElementById('downloadZipBtn');
+                this.logoDisplay = document.getElementById('logoDisplay');
+                this.sectionDivider = document.getElementById('sectionDivider');
+                this.processedCount = document.getElementById('processedCount');
+                this.totalSize = document.getElementById('totalSize');
+            }
 
-    document.getElementById('imageInput').addEventListener('change', async (event) => {
-      const output = document.getElementById('output');
-      output.innerHTML = '';
+            createLogo() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 180;
+                canvas.height = 70;
 
-      for (const file of event.target.files) {
-        const resultUrl = await addWatermarkToImage(file);
-        const img = document.createElement('img');
-        img.src = resultUrl;
-        img.classList.add('preview');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 180, 70);
 
-        const link = document.createElement('a');
-        link.href = resultUrl;
-        link.download = `watermarked-${file.name}`;
-        link.innerText = '⬇ 워터마크 이미지 다운로드';
-        link.style.display = 'block';
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(3, 3, 174, 64);
 
-        const container = document.createElement('div');
-        container.appendChild(img);
-        container.appendChild(link);
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('까사감정원', 90, 30);
+                
+                ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.fillText('CASA APPRAISAL', 90, 48);
 
-        output.appendChild(container);
-      }
-    });
-  </script>
+                const img = new Image();
+                img.onload = () => {
+                    this.logoImage = img;
+                    this.displayLogo();
+                };
+                img.src = canvas.toDataURL();
+            }
+
+            displayLogo() {
+                const ctx = this.logoDisplay.getContext('2d');
+                const size = 40;
+                const ratio = Math.min(size / this.logoImage.width, size / this.logoImage.height);
+                const width = this.logoImage.width * ratio;
+                const height = this.logoImage.height * ratio;
+                const x = (size - width) / 2;
+                const y = (size - height) / 2;
+                
+                ctx.clearRect(0, 0, size, size);
+                ctx.drawImage(this.logoImage, x, y, width, height);
+            }
+
+            bindEvents() {
+                // 드래그 앤 드롭
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    this.handleFiles(e.dataTransfer.files);
+                });
+
+                this.uploadArea.addEventListener('click', () => {
+                    this.fileInput.click();
+                });
+
+                this.fileInput.addEventListener('change', (e) => {
+                    this.handleFiles(e.target.files);
+                });
+
+                this.downloadZipBtn.addEventListener('click', () => this.downloadAsZip());
+            }
+
+            handleFiles(files) {
+                const validFiles = Array.from(files).filter(file => 
+                    file.type.startsWith('image/')
+                );
+
+                if (validFiles.length === 0) {
+                    this.showNotification('이미지 파일만 업로드 가능합니다.', 'error');
+                    return;
+                }
+
+                this.uploadedFiles = [...this.uploadedFiles, ...validFiles];
+                this.updateFileList();
+                this.processImages();
+            }
+
+            showNotification(message, type = 'info') {
+                // 간단한 알림 시스템 (실제로는 더 정교한 토스트 알림을 구현할 수 있음)
+                alert(message);
+            }
+
+            updateFileList() {
+                this.fileList.innerHTML = '';
+                
+                this.uploadedFiles.forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item slide-up';
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        fileItem.innerHTML = `
+                            <div class="file-info">
+                                <img src="${e.target.result}" class="file-thumbnail" alt="thumbnail">
+                                <div class="file-details">
+                                    <h4>${file.name}</h4>
+                                    <p>${this.formatFileSize(file.size)}</p>
+                                </div>
+                            </div>
+                            <div class="status processing" id="status-${index}">처리중</div>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    this.fileList.appendChild(fileItem);
+                });
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+
+            async processImages() {
+                if (!this.logoImage || this.uploadedFiles.length === 0) return;
+
+                this.progressBar.style.display = 'block';
+                this.processedImages = [];
+
+                for (let i = 0; i < this.uploadedFiles.length; i++) {
+                    const file = this.uploadedFiles[i];
+                    const processedImage = await this.processImage(file, i);
+                    this.processedImages.push(processedImage);
+                    
+                    const statusElement = document.getElementById(`status-${i}`);
+                    if (statusElement) {
+                        statusElement.className = 'status completed';
+                        statusElement.textContent = '완료';
+                    }
+                    
+                    const progress = ((i + 1) / this.uploadedFiles.length) * 100;
+                    this.progressFill.style.width = `${progress}%`;
+                }
+
+                this.progressBar.style.display = 'none';
+                this.showResults();
+            }
+
+            processImage(file, index) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            
+                            ctx.drawImage(img, 0, 0);
+                            this.addWatermark(ctx, canvas.width, canvas.height);
+                            
+                            resolve({
+                                canvas: canvas,
+                                fileName: file.name,
+                                originalFile: file
+                            });
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            addWatermark(ctx, canvasWidth, canvasHeight) {
+                if (!this.logoImage) return;
+
+                const imageSize = Math.max(canvasWidth, canvasHeight);
+                let logoScale;
+                
+                if (imageSize <= 800) logoScale = 0.12;
+                else if (imageSize <= 2000) logoScale = 0.10;
+                else if (imageSize <= 4000) logoScale = 0.08;
+                else logoScale = 0.06;
+
+                const logoSize = imageSize * logoScale;
+                const logoRatio = this.logoImage.width / this.logoImage.height;
+                
+                let logoWidth, logoHeight;
+                if (logoRatio > 1) {
+                    logoWidth = logoSize;
+                    logoHeight = logoSize / logoRatio;
+                } else {
+                    logoHeight = logoSize;
+                    logoWidth = logoSize * logoRatio;
+                }
+
+                const x = (canvasWidth - logoWidth) / 2;
+                const y = (canvasHeight - logoHeight) / 2;
+
+                ctx.globalAlpha = 0.25;
+                ctx.drawImage(this.logoImage, x, y, logoWidth, logoHeight);
+                ctx.globalAlpha = 1;
+            }
+
+            showResults() {
+                this.sectionDivider.style.display = 'block';
+                this.showPreview();
+                this.updateStats();
+                this.downloadSection.style.display = 'block';
+                this.downloadSection.classList.add('slide-up');
+            }
+
+            showPreview() {
+                this.previewGrid.innerHTML = '';
+                
+                this.processedImages.forEach((processedImage, index) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item slide-up';
+                    
+                    const previewCanvas = document.createElement('canvas');
+                    const ctx = previewCanvas.getContext('2d');
+                    
+                    const maxPreviewSize = 160;
+                    const ratio = Math.min(maxPreviewSize / processedImage.canvas.width, maxPreviewSize / processedImage.canvas.height);
+                    
+                    previewCanvas.width = processedImage.canvas.width * ratio;
+                    previewCanvas.height = processedImage.canvas.height * ratio;
+                    previewCanvas.className = 'preview-image';
+                    
+                    ctx.drawImage(processedImage.canvas, 0, 0, previewCanvas.width, previewCanvas.height);
+                    
+                    const content = document.createElement('div');
+                    content.className = 'preview-content';
+                    
+                    const title = document.createElement('div');
+                    title.className = 'preview-title';
+                    title.textContent = processedImage.fileName;
+                    
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'btn btn-secondary';
+                    downloadBtn.innerHTML = '<span>⬇️</span> 다운로드';
+                    downloadBtn.style.width = '100%';
+                    downloadBtn.onclick = () => this.downloadSingle(processedImage);
+                    
+                    content.appendChild(title);
+                    content.appendChild(downloadBtn);
+                    
+                    previewItem.appendChild(previewCanvas);
+                    previewItem.appendChild(content);
+                    
+                    this.previewGrid.appendChild(previewItem);
+                });
+            }
+
+            updateStats() {
+                const totalSize = this.uploadedFiles.reduce((sum, file) => sum + file.size, 0);
+                
+                this.processedCount.textContent = this.processedImages.length;
+                this.totalSize.textContent = this.formatFileSize(totalSize);
+            }
+
+            downloadSingle(processedImage) {
+                const link = document.createElement('a');
+                link.download = `watermarked_${processedImage.fileName}`;
+                link.href = processedImage.canvas.toDataURL('image/png', 0.9);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            async downloadAsZip() {
+                this.downloadZipBtn.disabled = true;
+                this.downloadZipBtn.innerHTML = '<span>⏳</span> 압축중...';
+                
+                const zip = new JSZip();
+                
+                for (const processedImage of this.processedImages) {
+                    const dataURL = processedImage.canvas.toDataURL('image/png', 0.9);
+                    const base64Data = dataURL.split(',')[1];
+                    zip.file(`watermarked_${processedImage.fileName}`, base64Data, {base64: true});
+                }
+                
+                const content = await zip.generateAsync({type: 'blob'});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `까사감정원_워터마크_${new Date().toISOString().slice(0,10)}.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                this.downloadZipBtn.disabled = false;
+                this.downloadZipBtn.innerHTML = '<span>📦</span> ZIP으로 다운로드';
+            }
+        }
+
+        const app = new CasaWatermarkApp();
+    </script>
 </body>
 </html>
