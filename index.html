@@ -247,10 +247,7 @@
             img.src = 'https://i.ibb.co/bgnhFYFh/CASLOGO.png';
         }
 
-        // 파일 선택
-        function selectFiles() {
-            document.getElementById('fileInput').click();
-        }
+
 
         // 파일 처리 - 로고 확인 강화
         function handleFiles(files) {
@@ -414,13 +411,32 @@
             link.click();
         }
 
-        // 이벤트 리스너 - 드래그&드롭 문제 해결
+        // 이벤트 리스너 - 파일 선택 버튼 문제 해결
         document.addEventListener('DOMContentLoaded', function() {
             console.log('페이지 로드 완료');
             createLogo();
             
             const fileInput = document.getElementById('fileInput');
             const uploadArea = document.getElementById('uploadArea');
+            const selectButton = document.getElementById('selectButton');
+            
+            // 파일 선택 버튼 이벤트 (직접 연결)
+            selectButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('파일 선택 버튼 클릭됨');
+                fileInput.click();
+            });
+            
+            // 업로드 영역 클릭 이벤트 (버튼 제외)
+            uploadArea.addEventListener('click', function(e) {
+                // 버튼 클릭이 아닐 때만 실행
+                if (e.target !== selectButton && !selectButton.contains(e.target)) {
+                    e.preventDefault();
+                    console.log('업로드 영역 클릭됨');
+                    fileInput.click();
+                }
+            });
             
             // 파일 선택 이벤트
             fileInput.addEventListener('change', function(e) {
@@ -428,43 +444,34 @@
                 if (e.target.files.length > 0) {
                     handleFiles(e.target.files);
                 }
+                // 파일 입력 초기화 (같은 파일 다시 선택 가능)
+                e.target.value = '';
             });
             
-            // 클릭 이벤트
-            uploadArea.addEventListener('click', function(e) {
-                e.preventDefault();
-                console.log('업로드 영역 클릭됨');
-                fileInput.click();
-            });
-            
-            // 드래그 오버 이벤트 (중요!)
+            // 드래그 오버 이벤트
             uploadArea.addEventListener('dragover', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 uploadArea.classList.add('dragover');
-                console.log('드래그 오버');
             });
             
-            // 드래그 엔터 이벤트 추가
+            // 드래그 엔터 이벤트
             uploadArea.addEventListener('dragenter', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 uploadArea.classList.add('dragover');
-                console.log('드래그 엔터');
             });
             
             // 드래그 리브 이벤트
             uploadArea.addEventListener('dragleave', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                // 실제로 영역을 벗어날 때만 제거
                 if (!uploadArea.contains(e.relatedTarget)) {
                     uploadArea.classList.remove('dragover');
-                    console.log('드래그 리브');
                 }
             });
             
-            // 드롭 이벤트 (가장 중요!)
+            // 드롭 이벤트
             uploadArea.addEventListener('drop', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -474,12 +481,10 @@
                 
                 if (e.dataTransfer.files.length > 0) {
                     handleFiles(e.dataTransfer.files);
-                } else {
-                    console.log('드롭된 파일이 없음');
                 }
             });
             
-            // 전체 페이지에서 드래그&드롭 방지 (다른 곳에 드롭 방지)
+            // 전체 페이지 드래그 방지
             document.addEventListener('dragover', function(e) {
                 e.preventDefault();
             });
