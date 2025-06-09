@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>까사감정원 워터마크 자동 삽입기</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; text-align: center; }
+    canvas { display: none; }
+    img.preview { max-width: 300px; margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h1>까사감정원 워터마크 자동 삽입기</h1>
+  <input type="file" id="imageInput" multiple accept="image/*">
+  <div id="output"></div>
+
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const watermarkSrc = '/mnt/data/CASLOGO.svg'; // 실제 환경에선 서버 경로 또는 base64로 대체
+
+    async function loadSVGImage(src) {
+      const response = await fetch(src);
+      const svgText = await response.text();
+      const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(svgBlob);
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.src = url;
+      });
+    }
+
+    async function addWatermarkToImage(imageFile) {
+      const img = new Image();
+      img.src = URL.createObjectURL(imageFile);
+      await img.decode();
+
+      const watermark = await loadSVGImage(watermarkSrc);
+
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      ctx.drawImage(img, 0, 0);
+
+      const scale = img.width * 0.2 / watermark.width;
+      const wmWidth = watermark.width * scale;
+      const wmHeight = watermark.height * scale;
+      const x = (img.width - wmWidth) / 2;
+      const y = (img.height - wmHeight) / 2;
+
+      ctx.drawImage(watermark, x, y, wmWidth, wmHeight);
+
+      const outputUrl = canvas.toDataURL('image/jpeg');
+      return outputUrl;
+    }
+
+    document.getElementById('imageInput').addEventListener('change', async (event) => {
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+
+      for (const file of event.target.files) {
+        const resultUrl = await addWatermarkToImage(file);
+        const img = document.createElement('img');
+        img.src = resultUrl;
+        img.classList.add('preview');
+
+        const link = document.createElement('a');
+        link.href = resultUrl;
+        link.download = `watermarked-${file.name}`;
+        link.innerText = '⬇ 워터마크 이미지 다운로드';
+        link.style.display = 'block';
+
+        const container = document.createElement('div');
+        container.appendChild(img);
+        container.appendChild(link);
+
+        output.appendChild(container);
+      }
+    });
+  </script>
+</body>
+</html>
