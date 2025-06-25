@@ -189,6 +189,18 @@
                 </label>
                 <input type="text" id="fileNameInput" placeholder="CAS014328" 
                        style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 200px; text-align: center;">
+                
+                <div style="margin-top: 10px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">파일명 규칙:</label>
+                    <label style="display: block; margin: 5px 0;">
+                        <input type="radio" name="namingRule" value="suffix" checked style="margin-right: 5px;">
+                        번호 추가 (CAS014328-01, CAS014328-02...)
+                    </label>
+                    <label style="display: block; margin: 5px 0;">
+                        <input type="radio" name="namingRule" value="increment" style="margin-right: 5px;">
+                        숫자 증가 (CAS014328, CAS014329, CAS014330...)
+                    </label>
+                </div>
             </div>
             
             <button class="btn" id="selectBtn">파일 선택</button>
@@ -213,6 +225,18 @@
                 </label>
                 <input type="text" id="fileNameInputAucnet" placeholder="CAS014328" 
                        style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 200px; text-align: center;">
+                
+                <div style="margin-top: 10px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">파일명 규칙:</label>
+                    <label style="display: block; margin: 5px 0;">
+                        <input type="radio" name="namingRuleAucnet" value="suffix" checked style="margin-right: 5px;">
+                        번호 추가 (CAS014328-01, CAS014328-02...)
+                    </label>
+                    <label style="display: block; margin: 5px 0;">
+                        <input type="radio" name="namingRuleAucnet" value="increment" style="margin-right: 5px;">
+                        숫자 증가 (CAS014328, CAS014329, CAS014330...)
+                    </label>
+                </div>
             </div>
             
             <button class="btn aucnet" id="selectBtnAucnet">파일 선택</button>
@@ -352,6 +376,19 @@
             });
         }
 
+        // 숫자 증가 함수
+        function incrementFileName(fileName) {
+            // 숫자로 끝나는 부분 찾기
+            const match = fileName.match(/^(.+?)(\d+)$/);
+            if (match) {
+                const prefix = match[1];
+                const number = parseInt(match[2]);
+                const paddedNumber = (number + 1).toString().padStart(match[2].length, '0');
+                return prefix + paddedNumber;
+            }
+            return fileName + '1';
+        }
+
         // 이미지를 정사각형으로 변환하고 워터마크 적용
         function processImageToSquare(img, canvas, ctx, baseFileName, index, totalFiles, isAucnet) {
             // 정사각형으로 만들기 (여백 추가)
@@ -394,10 +431,27 @@
             ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
             ctx.globalAlpha = 1;
             
-            // 파일명 생성 (JPG로 저장)
-            const fileName = totalFiles === 1 
-                ? `${baseFileName}.jpg` 
-                : `${baseFileName}-${(index + 1).toString().padStart(2, '0')}.jpg`;
+            // 파일명 규칙 확인
+            const namingRule = isAucnet 
+                ? document.querySelector('input[name="namingRuleAucnet"]:checked').value
+                : document.querySelector('input[name="namingRule"]:checked').value;
+            
+            let fileName;
+            if (totalFiles === 1) {
+                fileName = `${baseFileName}.jpg`;
+            } else {
+                if (namingRule === 'suffix') {
+                    // 기존 방식: -01, -02 추가
+                    fileName = `${baseFileName}-${(index + 1).toString().padStart(2, '0')}.jpg`;
+                } else {
+                    // 새로운 방식: 숫자 증가
+                    let currentName = baseFileName;
+                    for (let i = 0; i < index; i++) {
+                        currentName = incrementFileName(currentName);
+                    }
+                    fileName = `${currentName}.jpg`;
+                }
+            }
             
             // 결과 저장 (JPG 형식)
             canvas.toBlob(function(blob) {
