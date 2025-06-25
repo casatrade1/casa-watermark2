@@ -521,7 +521,7 @@
         function downloadSingle(index) {
             const file = processedFiles[index];
             const link = document.createElement('a');
-            link.download = `watermarked_${file.name}`;
+            link.download = file.name;
             link.href = file.dataURL;
             document.body.appendChild(link);
             link.click();
@@ -535,7 +535,7 @@
             const zip = new JSZip();
             processedFiles.forEach(file => {
                 const base64 = file.dataURL.split(',')[1];
-                zip.file(`watermarked_${file.name}`, base64, {base64: true});
+                zip.file(file.name, base64, {base64: true});
             });
             
             const content = await zip.generateAsync({type: 'blob'});
