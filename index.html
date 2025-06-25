@@ -51,6 +51,21 @@
             background: #e8f4ff;
         }
 
+        .upload-box.aucnet {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .upload-box.aucnet:hover {
+            border-color: #28a745;
+            background: #e8ffe9;
+        }
+
+        .upload-box.aucnet.drag-over {
+            border-color: #28a745;
+            background: #d4f7d6;
+        }
+
         .btn {
             background: #007bff;
             color: white;
@@ -66,7 +81,15 @@
             background: #0056b3;
         }
 
-        #fileInput {
+        .btn.aucnet {
+            background: #28a745;
+        }
+
+        .btn.aucnet:hover {
+            background: #1e7e34;
+        }
+
+        #fileInput, #fileInputAucnet {
             display: none;
         }
 
@@ -120,6 +143,25 @@
             background: #f8f9fa;
             border-radius: 8px;
         }
+
+        .section-title {
+            color: #333;
+            margin: 30px 0 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .aucnet-note {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -132,11 +174,49 @@
             <p>이 로고가 모든 이미지에 자동으로 적용됩니다</p>
         </div>
 
+        <!-- 일반 이미지 업로드 -->
+        <div class="section-title">
+            <h2>📷 일반 이미지 업로드</h2>
+        </div>
+
         <div class="upload-box" id="uploadBox">
-            <h3>📷 이미지 업로드</h3>
+            <h3>일반 이미지 처리</h3>
             <p>파일을 드래그하거나 아래 버튼을 클릭하세요</p>
+            
+            <div style="margin: 15px 0;">
+                <label for="fileNameInput" style="display: block; margin-bottom: 5px; font-weight: bold;">
+                    저장할 파일명 (예: CAS014328):
+                </label>
+                <input type="text" id="fileNameInput" placeholder="CAS014328" 
+                       style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 200px; text-align: center;">
+            </div>
+            
             <button class="btn" id="selectBtn">파일 선택</button>
             <input type="file" id="fileInput" multiple accept="image/*">
+        </div>
+
+        <!-- 오크넷 이미지 업로드 -->
+        <div class="section-title">
+            <h2>🚗 오크넷 이미지 업로드</h2>
+        </div>
+
+        <div class="upload-box aucnet" id="uploadBoxAucnet">
+            <h3>오크넷 이미지 처리</h3>
+            <p>오크넷 사진을 드래그하거나 아래 버튼을 클릭하세요</p>
+            <div class="aucnet-note">
+                ⚠️ 오크넷 사진은 위아래 40픽셀씩 자르고 정사각형으로 변환됩니다
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <label for="fileNameInputAucnet" style="display: block; margin-bottom: 5px; font-weight: bold;">
+                    저장할 파일명 (예: CAS014328):
+                </label>
+                <input type="text" id="fileNameInputAucnet" placeholder="CAS014328" 
+                       style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 200px; text-align: center;">
+            </div>
+            
+            <button class="btn aucnet" id="selectBtnAucnet">파일 선택</button>
+            <input type="file" id="fileInputAucnet" multiple accept="image/*">
         </div>
 
         <div class="progress" id="progress">
@@ -189,9 +269,9 @@
             img.src = 'https://i.ibb.co/bgnhFYFh/CASLOGO.png';
         }
 
-        // 파일 처리
-        function processFiles(files) {
-            console.log('파일 처리 시작:', files.length, '개');
+        // 파일 처리 - 일반 이미지
+        function processFiles(files, isAucnet = false) {
+            console.log('파일 처리 시작:', files.length, '개', isAucnet ? '(오크넷)' : '(일반)');
             
             if (!logoImg) {
                 alert('로고가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
@@ -202,6 +282,16 @@
             
             if (imageFiles.length === 0) {
                 alert('이미지 파일을 선택해주세요.');
+                return;
+            }
+            
+            // 파일명 가져오기
+            const baseFileName = isAucnet 
+                ? document.getElementById('fileNameInputAucnet').value.trim()
+                : document.getElementById('fileNameInput').value.trim();
+            
+            if (!baseFileName) {
+                alert('저장할 파일명을 입력해주세요. (예: CAS014328)');
                 return;
             }
             
@@ -219,78 +309,130 @@
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        // 정사각형으로 만들기 (여백 추가)
-                        const maxSize = Math.max(img.width, img.height);
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        canvas.width = maxSize;
-                        canvas.height = maxSize;
+                        let canvas = document.createElement('canvas');
+                        let ctx = canvas.getContext('2d');
                         
-                        // 배경을 흰색으로 채우기
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, maxSize, maxSize);
-                        
-                        // 이미지를 가운데 배치
-                        const offsetX = (maxSize - img.width) / 2;
-                        const offsetY = (maxSize - img.height) / 2;
-                        ctx.drawImage(img, offsetX, offsetY);
-                        
-                        console.log(`원본: ${img.width}x${img.height} → 정사각형: ${maxSize}x${maxSize}`);
-                        
-                        // 워터마크 크기 계산 (정사각형 기준)
-                        const imageSize = maxSize;
-                        let scale;
-                        
-                        if (imageSize <= 500) scale = 0.35;
-                        else if (imageSize <= 800) scale = 0.30;
-                        else if (imageSize <= 1200) scale = 0.25;
-                        else if (imageSize <= 2000) scale = 0.22;
-                        else if (imageSize <= 3000) scale = 0.20;
-                        else if (imageSize <= 4000) scale = 0.18;
-                        else scale = 0.16;
-                        
-                        const logoSize = imageSize * scale;
-                        const logoRatio = logoImg.width / logoImg.height;
-                        const logoW = logoRatio > 1 ? logoSize : logoSize * logoRatio;
-                        const logoH = logoRatio > 1 ? logoSize / logoRatio : logoSize;
-                        const logoX = (maxSize - logoW) / 2;
-                        const logoY = (maxSize - logoH) / 2;
-                        
-                        // 워터마크 그리기
-                        ctx.globalAlpha = 0.4;
-                        ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
-                        ctx.globalAlpha = 1;
-                        
-                        // 결과 저장
-                        const dataURL = canvas.toDataURL('image/png', 0.9);
-                        processedFiles.push({
-                            name: file.name,
-                            dataURL: dataURL
-                        });
-                        
-                        // 미리보기 추가
-                        const item = document.createElement('div');
-                        item.className = 'preview-item';
-                        item.innerHTML = `
-                            <img src="${dataURL}" alt="${file.name}">
-                            <p>${file.name}</p>
-                            <button class="btn" onclick="downloadSingle(${index})">다운로드</button>
-                        `;
-                        grid.appendChild(item);
-                        
-                        completed++;
-                        const percent = (completed / imageFiles.length) * 100;
-                        document.getElementById('progressBar').style.width = percent + '%';
-                        
-                        if (completed === imageFiles.length) {
-                            document.getElementById('progress').style.display = 'none';
-                            console.log('모든 파일 처리 완료');
+                        // 오크넷 처리: 위아래 40픽셀 자르기
+                        if (isAucnet) {
+                            const cropTop = 40;
+                            const cropBottom = 40;
+                            const croppedHeight = Math.max(1, img.height - cropTop - cropBottom);
+                            
+                            // 임시 캔버스에서 크롭
+                            const tempCanvas = document.createElement('canvas');
+                            const tempCtx = tempCanvas.getContext('2d');
+                            tempCanvas.width = img.width;
+                            tempCanvas.height = croppedHeight;
+                            
+                            // 크롭된 부분 그리기
+                            tempCtx.drawImage(img, 0, -cropTop);
+                            
+                            console.log(`오크넷 크롭: ${img.width}x${img.height} → ${img.width}x${croppedHeight}`);
+                            
+                            // 크롭된 이미지를 새 이미지로 변환
+                            const croppedImg = new Image();
+                            croppedImg.onload = function() {
+                                processImageToSquare(croppedImg, canvas, ctx, baseFileName, index, imageFiles.length, isAucnet);
+                                
+                                completed++;
+                                updateProgress(completed, imageFiles.length);
+                            };
+                            croppedImg.src = tempCanvas.toDataURL();
+                        } else {
+                            // 일반 처리
+                            processImageToSquare(img, canvas, ctx, baseFileName, index, imageFiles.length, isAucnet);
+                            
+                            completed++;
+                            updateProgress(completed, imageFiles.length);
                         }
                     };
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             });
+        }
+
+        // 이미지를 정사각형으로 변환하고 워터마크 적용
+        function processImageToSquare(img, canvas, ctx, baseFileName, index, totalFiles, isAucnet) {
+            // 정사각형으로 만들기 (여백 추가)
+            const maxSize = Math.max(img.width, img.height);
+            canvas.width = maxSize;
+            canvas.height = maxSize;
+            
+            // 배경을 흰색으로 채우기
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, maxSize, maxSize);
+            
+            // 이미지를 가운데 배치
+            const offsetX = (maxSize - img.width) / 2;
+            const offsetY = (maxSize - img.height) / 2;
+            ctx.drawImage(img, offsetX, offsetY);
+            
+            console.log(`${isAucnet ? '오크넷' : '일반'} 정사각형: ${img.width}x${img.height} → ${maxSize}x${maxSize}`);
+            
+            // 워터마크 크기 계산 (정사각형 기준)
+            const imageSize = maxSize;
+            let scale;
+            
+            if (imageSize <= 500) scale = 0.35;
+            else if (imageSize <= 800) scale = 0.30;
+            else if (imageSize <= 1200) scale = 0.25;
+            else if (imageSize <= 2000) scale = 0.22;
+            else if (imageSize <= 3000) scale = 0.20;
+            else if (imageSize <= 4000) scale = 0.18;
+            else scale = 0.16;
+            
+            const logoSize = imageSize * scale;
+            const logoRatio = logoImg.width / logoImg.height;
+            const logoW = logoRatio > 1 ? logoSize : logoSize * logoRatio;
+            const logoH = logoRatio > 1 ? logoSize / logoRatio : logoSize;
+            const logoX = (maxSize - logoW) / 2;
+            const logoY = (maxSize - logoH) / 2;
+            
+            // 워터마크 그리기
+            ctx.globalAlpha = 0.4;
+            ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+            ctx.globalAlpha = 1;
+            
+            // 파일명 생성 (JPG로 저장)
+            const fileName = totalFiles === 1 
+                ? `${baseFileName}.jpg` 
+                : `${baseFileName}-${(index + 1).toString().padStart(2, '0')}.jpg`;
+            
+            // 결과 저장 (JPG 형식)
+            canvas.toBlob(function(blob) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const dataURL = reader.result;
+                    processedFiles.push({
+                        name: fileName,
+                        dataURL: dataURL,
+                        type: isAucnet ? 'aucnet' : 'normal'
+                    });
+                    
+                    // 미리보기 추가
+                    const item = document.createElement('div');
+                    item.className = 'preview-item';
+                    item.innerHTML = `
+                        <img src="${dataURL}" alt="${fileName}">
+                        <p>${fileName} ${isAucnet ? '(오크넷)' : ''}</p>
+                        <button class="btn" onclick="downloadSingle(${processedFiles.length - 1})">다운로드</button>
+                    `;
+                    document.getElementById('previewGrid').appendChild(item);
+                };
+                reader.readAsDataURL(blob);
+            }, 'image/jpeg', 0.9);
+        }
+
+        // 진행률 업데이트
+        function updateProgress(completed, total) {
+            const percent = (completed / total) * 100;
+            document.getElementById('progressBar').style.width = percent + '%';
+            
+            if (completed === total) {
+                document.getElementById('progress').style.display = 'none';
+                console.log('모든 파일 처리 완료');
+            }
         }
 
         // 개별 다운로드
@@ -331,23 +473,38 @@
             const fileInput = document.getElementById('fileInput');
             const selectBtn = document.getElementById('selectBtn');
             const uploadBox = document.getElementById('uploadBox');
+            
+            const fileInputAucnet = document.getElementById('fileInputAucnet');
+            const selectBtnAucnet = document.getElementById('selectBtnAucnet');
+            const uploadBoxAucnet = document.getElementById('uploadBoxAucnet');
+            
             const downloadAllBtn = document.getElementById('downloadAll');
             
-            // 파일 선택 버튼
+            // 일반 이미지 버튼
             selectBtn.onclick = function() {
-                console.log('버튼 클릭됨');
                 fileInput.click();
             };
             
-            // 파일 선택 이벤트
+            // 오크넷 이미지 버튼
+            selectBtnAucnet.onclick = function() {
+                fileInputAucnet.click();
+            };
+            
+            // 일반 파일 선택 이벤트
             fileInput.onchange = function(e) {
-                console.log('파일 선택됨:', e.target.files.length);
                 if (e.target.files.length > 0) {
-                    processFiles(e.target.files);
+                    processFiles(e.target.files, false);
                 }
             };
             
-            // 드래그 앤 드롭
+            // 오크넷 파일 선택 이벤트
+            fileInputAucnet.onchange = function(e) {
+                if (e.target.files.length > 0) {
+                    processFiles(e.target.files, true);
+                }
+            };
+            
+            // 일반 드래그 앤 드롭
             uploadBox.ondragover = function(e) {
                 e.preventDefault();
                 uploadBox.classList.add('drag-over');
@@ -361,8 +518,24 @@
             uploadBox.ondrop = function(e) {
                 e.preventDefault();
                 uploadBox.classList.remove('drag-over');
-                console.log('파일 드롭됨:', e.dataTransfer.files.length);
-                processFiles(e.dataTransfer.files);
+                processFiles(e.dataTransfer.files, false);
+            };
+            
+            // 오크넷 드래그 앤 드롭
+            uploadBoxAucnet.ondragover = function(e) {
+                e.preventDefault();
+                uploadBoxAucnet.classList.add('drag-over');
+            };
+            
+            uploadBoxAucnet.ondragleave = function(e) {
+                e.preventDefault();
+                uploadBoxAucnet.classList.remove('drag-over');
+            };
+            
+            uploadBoxAucnet.ondrop = function(e) {
+                e.preventDefault();
+                uploadBoxAucnet.classList.remove('drag-over');
+                processFiles(e.dataTransfer.files, true);
             };
             
             // 전체 다운로드
