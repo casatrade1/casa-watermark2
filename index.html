@@ -319,6 +319,33 @@
                 return;
             }
             
+            // 파일명 규칙 확인
+            const namingRule = isAucnet 
+                ? document.querySelector('input[name="namingRuleAucnet"]:checked').value
+                : document.querySelector('input[name="namingRule"]:checked').value;
+            
+            // 모든 파일명을 미리 계산
+            const fileNames = [];
+            for (let i = 0; i < imageFiles.length; i++) {
+                let fileName;
+                if (imageFiles.length === 1) {
+                    fileName = `${baseFileName}.jpg`;
+                } else {
+                    if (namingRule === 'suffix') {
+                        // 기존 방식: -01, -02 추가
+                        fileName = `${baseFileName}-${(i + 1).toString().padStart(2, '0')}.jpg`;
+                    } else {
+                        // 새로운 방식: 숫자 증가
+                        let currentName = baseFileName;
+                        for (let j = 0; j < i; j++) {
+                            currentName = incrementFileName(currentName);
+                        }
+                        fileName = `${currentName}.jpg`;
+                    }
+                }
+                fileNames.push(fileName);
+            }
+            
             document.getElementById('progress').style.display = 'block';
             document.getElementById('preview').style.display = 'block';
             
@@ -327,6 +354,7 @@
             grid.innerHTML = '';
             
             let completed = 0;
+            const results = new Array(imageFiles.length); // 순서 보장을 위한 배열
             
             imageFiles.forEach((file, index) => {
                 const reader = new FileReader();
@@ -356,23 +384,49 @@
                             // 크롭된 이미지를 새 이미지로 변환
                             const croppedImg = new Image();
                             croppedImg.onload = function() {
-                                processImageToSquare(croppedImg, canvas, ctx, baseFileName, index, imageFiles.length, isAucnet);
-                                
-                                completed++;
-                                updateProgress(completed, imageFiles.length);
+                                processImageToSquare(croppedImg, canvas, ctx, fileNames[index], index, isAucnet, results, () => {
+                                    completed++;
+                                    updateProgress(completed, imageFiles.length);
+                                    if (completed === imageFiles.length) {
+                                        finalizeResults(results);
+                                    }
+                                });
                             };
                             croppedImg.src = tempCanvas.toDataURL();
                         } else {
                             // 일반 처리
-                            processImageToSquare(img, canvas, ctx, baseFileName, index, imageFiles.length, isAucnet);
-                            
-                            completed++;
-                            updateProgress(completed, imageFiles.length);
+                            processImageToSquare(img, canvas, ctx, fileNames[index], index, isAucnet, results, () => {
+                                completed++;
+                                updateProgress(completed, imageFiles.length);
+                                if (completed === imageFiles.length) {
+                                    finalizeResults(results);
+                                }
+                            });
                         }
                     };
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
+            });
+        }
+
+        // 최종 결과 정리
+        function finalizeResults(results) {
+            processedFiles = results.filter(item => item); // null 제거
+            
+            // 미리보기 그리드 다시 그리기 (순서대로)
+            const grid = document.getElementById('previewGrid');
+            grid.innerHTML = '';
+            
+            processedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+                item.innerHTML = `
+                    <img src="${file.dataURL}" alt="${file.name}">
+                    <p>${file.name} ${file.type === 'aucnet' ? '(오크넷)' : ''}</p>
+                    <button class="btn" onclick="downloadSingle(${index})">다운로드</button>
+                `;
+                grid.appendChild(item);
             });
         }
 
@@ -390,7 +444,7 @@
         }
 
         // 이미지를 정사각형으로 변환하고 워터마크 적용
-        function processImageToSquare(img, canvas, ctx, baseFileName, index, totalFiles, isAucnet) {
+        function processImageToSquare(img, canvas, ctx, fileName, originalIndex, isAucnet, results, onComplete) {
             // 정사각형으로 만들기 (여백 추가)
             const maxSize = Math.max(img.width, img.height);
             canvas.width = maxSize;
@@ -431,48 +485,22 @@
             ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
             ctx.globalAlpha = 1;
             
-            // 파일명 규칙 확인
-            const namingRule = isAucnet 
-                ? document.querySelector('input[name="namingRuleAucnet"]:checked').value
-                : document.querySelector('input[name="namingRule"]:checked').value;
-            
-            let fileName;
-            if (totalFiles === 1) {
-                fileName = `${baseFileName}.jpg`;
-            } else {
-                if (namingRule === 'suffix') {
-                    // 기존 방식: -01, -02 추가
-                    fileName = `${baseFileName}-${(index + 1).toString().padStart(2, '0')}.jpg`;
-                } else {
-                    // 새로운 방식: 숫자 증가
-                    let currentName = baseFileName;
-                    for (let i = 0; i < index; i++) {
-                        currentName = incrementFileName(currentName);
-                    }
-                    fileName = `${currentName}.jpg`;
-                }
-            }
-            
             // 결과 저장 (JPG 형식)
             canvas.toBlob(function(blob) {
                 const reader = new FileReader();
                 reader.onload = function() {
                     const dataURL = reader.result;
-                    processedFiles.push({
+                    
+                    // 순서 보장을 위해 원래 인덱스 위치에 저장
+                    results[originalIndex] = {
                         name: fileName,
                         dataURL: dataURL,
-                        type: isAucnet ? 'aucnet' : 'normal'
-                    });
+                        type: isAucnet ? 'aucnet' : 'normal',
+                        originalIndex: originalIndex
+                    };
                     
-                    // 미리보기 추가
-                    const item = document.createElement('div');
-                    item.className = 'preview-item';
-                    item.innerHTML = `
-                        <img src="${dataURL}" alt="${fileName}">
-                        <p>${fileName} ${isAucnet ? '(오크넷)' : ''}</p>
-                        <button class="btn" onclick="downloadSingle(${processedFiles.length - 1})">다운로드</button>
-                    `;
-                    document.getElementById('previewGrid').appendChild(item);
+                    console.log(`파일 처리 완료: ${fileName} (인덱스: ${originalIndex})`);
+                    onComplete();
                 };
                 reader.readAsDataURL(blob);
             }, 'image/jpeg', 0.9);
